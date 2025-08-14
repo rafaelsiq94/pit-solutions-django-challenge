@@ -13,7 +13,6 @@ help:
 	@echo "  migrate          Apply database migrations"
 	@echo "  makemigrations   Create new migrations"
 	@echo "  shell            Open Django shell"
-	@echo "  superuser        Create Django superuser"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test             Run all tests"
@@ -58,10 +57,6 @@ makemigrations:
 shell:
 	@echo "Opening Django shell..."
 	python manage.py shell
-
-superuser:
-	@echo "Creating Django superuser..."
-	python manage.py createsuperuser
 
 # Testing Commands
 test:
@@ -211,17 +206,6 @@ docker-dev: docker-up
 	@echo "Docker development environment ready!"
 	@echo "API available at: http://localhost:8000/api/planets/"
 	@echo "Admin available at: http://localhost:8000/admin/"
-
-# Production-like Commands
-prod-check:
-	@echo "Running production checks..."
-	python manage.py check --deploy
-	python manage.py test api.tests
-
-# Documentation
-docs:
-	@echo "Generating API documentation..."
-	python manage.py shell -c "from django.core.management import execute_from_command_line; execute_from_command_line(['manage.py', 'collectstatic', '--noinput'])"
 
 # Monitoring
 status:
