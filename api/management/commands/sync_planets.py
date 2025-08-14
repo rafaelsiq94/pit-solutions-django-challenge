@@ -45,14 +45,6 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"Last sync time: {status['last_sync_time'] or 'Never'}")
 
-        if status["last_sync_stats"]:
-            stats = status["last_sync_stats"]
-            self.stdout.write(self.style.WARNING("Last sync statistics:"))
-            self.stdout.write(f"  Created: {stats['created']}")
-            self.stdout.write(f"  Updated: {stats['updated']}")
-            self.stdout.write(f"  Errors: {stats['errors']}")
-            self.stdout.write(f"  Total processed: {stats['total_processed']}")
-
     def sync_all_planets(self, sync_service):
         """Sync all planets."""
         self.stdout.write("Starting planet synchronization...")
