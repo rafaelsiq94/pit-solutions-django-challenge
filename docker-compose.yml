@@ -1,0 +1,39 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=challenge.settings
+      - POSTGRES_DB=django_db
+      - POSTGRES_USER=django_user
+      - POSTGRES_PASSWORD=django_password
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=django_db
+      - POSTGRES_USER=django_user
+      - POSTGRES_PASSWORD=django_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django_user -d django_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
