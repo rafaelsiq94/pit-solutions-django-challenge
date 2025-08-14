@@ -27,12 +27,134 @@ class PlanetViewSetTest(TestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["name"], "Test Planet")
-        self.assertEqual(response.data[0]["external_id"], "test-123")
+        # Check pagination structure
+        self.assertIn("results", response.data)
+        self.assertIn("count", response.data)
+        self.assertIn("next", response.data)
+        self.assertIn("previous", response.data)
+
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["name"], "Test Planet")
+        self.assertEqual(response.data["results"][0]["external_id"], "test-123")
         # Should not include timestamps in list view
-        self.assertNotIn("created_at", response.data[0])
-        self.assertNotIn("updated_at", response.data[0])
+        self.assertNotIn("created_at", response.data["results"][0])
+        self.assertNotIn("updated_at", response.data["results"][0])
+
+    def test_list_planets_pagination(self):
+        """Test pagination functionality."""
+        # Create multiple planets for pagination testing
+        for i in range(25):  # More than the default page size of 20
+            Planet.objects.create(
+                external_id=f"test-{i}",
+                name=f"Planet {i}",
+                population=1000000 + i,
+                climates=["temperate"],
+                terrains=["forest"],
+            )
+
+        url = reverse("api:planet-list")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 26)  # 25 + 1 from setUp
+        self.assertEqual(len(response.data["results"]), 20)  # Default page size
+        self.assertIsNotNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+
+        # Test second page
+        response = self.client.get(response.data["next"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 6)  # Remaining items
+        self.assertIsNone(response.data["next"])
+        self.assertIsNotNone(response.data["previous"])
+
+    def test_search_planets_by_name(self):
+        """Test searching planets by name."""
+        # Create planets with different names
+        Planet.objects.create(
+            external_id="tatooine-123",
+            name="Tatooine",
+            population=200000,
+            climates=["arid"],
+            terrains=["desert"],
+        )
+        Planet.objects.create(
+            external_id="naboo-123",
+            name="Naboo",
+            population=4500000000,
+            climates=["temperate"],
+            terrains=["grassy hills", "swamps"],
+        )
+        Planet.objects.create(
+            external_id="hoth-123",
+            name="Hoth",
+            population=0,
+            climates=["frozen"],
+            terrains=["tundra", "ice caves"],
+        )
+
+        # Test exact search
+        url = reverse("api:planet-list")
+        response = self.client.get(url, {"search": "Tatooine"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["name"], "Tatooine")
+
+        # Test partial search (case-insensitive)
+        response = self.client.get(url, {"search": "tat"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["name"], "Tatooine")
+
+        # Test case-insensitive search
+        response = self.client.get(url, {"search": "TATOOINE"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["name"], "Tatooine")
+
+        # Test search with no results
+        response = self.client.get(url, {"search": "NonExistentPlanet"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(len(response.data["results"]), 0)
+
+    def test_search_planets_empty_query(self):
+        """Test search with empty query parameter."""
+        url = reverse("api:planet-list")
+        response = self.client.get(url, {"search": ""})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Should return all planets (no filtering)
+        self.assertGreater(response.data["count"], 0)
+
+    def test_list_planets_ordering(self):
+        """Test that planets are ordered by name."""
+        # Create planets with different names
+        Planet.objects.create(
+            external_id="z-planet",
+            name="Zeta Planet",
+            population=1000000,
+            climates=["temperate"],
+            terrains=["forest"],
+        )
+        Planet.objects.create(
+            external_id="a-planet",
+            name="Alpha Planet",
+            population=1000000,
+            climates=["temperate"],
+            terrains=["forest"],
+        )
+
+        url = reverse("api:planet-list")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+
+        # Check that planets are ordered by name
+        planet_names = [planet["name"] for planet in results]
+        self.assertEqual(planet_names, sorted(planet_names))
 
     def test_retrieve_planet(self):
         """Test retrieving a single planet."""
@@ -200,7 +322,9 @@ class PlanetViewSetTest(TestCase):
     @patch("api.views.PlanetSyncService")
     @patch("api.services.sync_service.logger")
     @patch("api.views.logger")
-    def test_sync_planets_exception(self, mock_views_logger, mock_logger, mock_sync_service):
+    def test_sync_planets_exception(
+        self, mock_views_logger, mock_logger, mock_sync_service
+    ):
         """Test sync planets when an exception occurs."""
         mock_service_instance = Mock()
         mock_sync_service.return_value = mock_service_instance
@@ -241,7 +365,9 @@ class PlanetViewSetTest(TestCase):
     @patch("api.views.PlanetSyncService")
     @patch("api.services.sync_service.logger")
     @patch("api.views.logger")
-    def test_sync_status_exception(self, mock_views_logger, mock_logger, mock_sync_service):
+    def test_sync_status_exception(
+        self, mock_views_logger, mock_logger, mock_sync_service
+    ):
         """Test sync status when an exception occurs."""
         mock_service_instance = Mock()
         mock_sync_service.return_value = mock_service_instance

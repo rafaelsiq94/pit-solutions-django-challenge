@@ -63,8 +63,9 @@ class PlanetIntegrationTest(TestCase):
         response = self.client.get(list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["name"], "Partially Updated Planet")
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]["name"], "Partially Updated Planet")
 
         # 6. Delete the planet
         response = self.client.delete(retrieve_url)
@@ -113,10 +114,11 @@ class PlanetIntegrationTest(TestCase):
         # List all planets
         response = self.client.get(reverse("api:planet-list"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(response.data['count'], 3)
+        self.assertEqual(len(response.data['results']), 3)
 
         # Verify all planets are in the list
-        planet_names = [planet["name"] for planet in response.data]
+        planet_names = [planet["name"] for planet in response.data['results']]
         self.assertIn("Planet 1", planet_names)
         self.assertIn("Planet 2", planet_names)
         self.assertIn("Planet 3", planet_names)
@@ -256,8 +258,9 @@ class PlanetIntegrationTest(TestCase):
 
         # Verify data in list view
         list_response = self.client.get(reverse("api:planet-list"))
-        self.assertEqual(len(list_response.data), 1)
-        list_planet = list_response.data[0]
+        self.assertEqual(list_response.data['count'], 1)
+        self.assertEqual(len(list_response.data['results']), 1)
+        list_planet = list_response.data['results'][0]
 
         # Verify data in detail view
         detail_response = self.client.get(

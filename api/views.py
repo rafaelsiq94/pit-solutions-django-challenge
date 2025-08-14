@@ -2,6 +2,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from django.db.models import Q
 from .models import Planet
 from .serializers import (
     PlanetSerializer,
@@ -22,6 +23,20 @@ class PlanetViewSet(viewsets.ModelViewSet):
 
     queryset = Planet.objects.all()
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """
+        Override get_queryset to add search functionality.
+        Supports searching by planet name (case-insensitive).
+        """
+        queryset = Planet.objects.all()
+
+        search = self.request.query_params.get("search", None)
+
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search))
+
+        return queryset.order_by("name")
 
     def get_serializer_class(self):
         """Return appropriate serializer class based on action."""

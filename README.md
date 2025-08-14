@@ -1,6 +1,6 @@
 # 🌌 Star Wars Planet API
 
-[![Test Coverage](https://img.shields.io/badge/test%20coverage-96%25-brightgreen)](https://htmlcov.io/)
+[![Test Coverage](https://img.shields.io/badge/test%20coverage-97%25-brightgreen)](https://htmlcov.io/)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/django-5.2.5-green.svg)](https://www.djangoproject.com/)
 [![Django REST Framework](https://img.shields.io/badge/drf-3.16.1-red.svg)](https://www.django-rest-framework.org/)
@@ -25,6 +25,8 @@ A comprehensive Django REST API for managing Star Wars planets with automatic sy
 - **GraphQL Integration** - Automatic synchronization from Star Wars GraphQL API
 - **Data Generation** - Smart fake data generation for missing fields
 - **Management Commands** - CLI tools for data synchronization
+- **Pagination** - Page-based pagination with 20 items per page
+- **Search Functionality** - Case-insensitive search by planet name
 - **Comprehensive Testing** - Amazing code coverage
 
 ### 🔧 Technical Features
@@ -94,11 +96,24 @@ make test
 | `POST` | `/api/planets/sync/` | Sync all planets from GraphQL API |
 | `GET` | `/api/planets/sync-status/` | Get synchronization status |
 
+### Query Parameters
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `search` | string | Search planets by name (case-insensitive) | `?search=tatooine` |
+| `page` | integer | Get specific page (default: 1) | `?page=2` |
+
 ### Example API Usage
 
 ```bash
-# Get all planets
+# Get all planets (paginated)
 curl http://localhost:8000/api/planets/
+
+# Get planets with search
+curl http://localhost:8000/api/planets/?search=tatooine
+
+# Get specific page
+curl http://localhost:8000/api/planets/?page=2
 
 # Create a planet
 curl -X POST http://localhost:8000/api/planets/ \
@@ -115,6 +130,46 @@ curl -X POST http://localhost:8000/api/planets/sync/
 
 # Check sync status
 curl http://localhost:8000/api/planets/sync-status/
+```
+
+## 📊 API Response Examples
+
+### Paginated List Response
+```json
+{
+  "count": 51,
+  "next": "http://localhost:8000/api/planets/?page=3",
+  "previous": "http://localhost:8000/api/planets/?page=1",
+  "results": [
+    {
+      "id": 1,
+      "external_id": "cGxhbmV0czox",
+      "name": "Alderaan",
+      "population": 2000000000,
+      "climates": ["temperate"],
+      "terrains": ["grasslands", "mountains"]
+    }
+  ]
+}
+```
+
+### Search Response
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 2,
+      "external_id": "cGxhbmV0czoy",
+      "name": "Tatooine",
+      "population": 200000,
+      "climates": ["arid"],
+      "terrains": ["desert"]
+    }
+  ]
+}
 ```
 
 ## 📦 Installation
