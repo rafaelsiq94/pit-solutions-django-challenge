@@ -16,7 +16,8 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  test             Run all tests"
-	@echo "  test-coverage    Run tests with coverage report"
+	@echo "  test-coverage    Run tests with coverage report and treemap"
+	@echo "  coverage-badge   Generate coverage badge for README"
 	@echo "  test-models      Run model tests only"
 	@echo "  test-views       Run view tests only"
 	@echo "  test-services    Run service tests only"
@@ -68,6 +69,11 @@ test-coverage:
 	coverage run --source='.' manage.py test api.tests
 	coverage report
 	coverage html
+	@echo "Coverage report generated in htmlcov/index.html"
+	@echo "Coverage treemap available at: https://htmlcov.io/"
+	@echo ""
+	@echo "Coverage summary for README:"
+	@coverage report --format=total
 
 test-models:
 	@echo "Running model tests..."
@@ -96,6 +102,14 @@ test-management:
 test-integration:
 	@echo "Running integration tests..."
 	python manage.py test api.tests.test_integration
+
+coverage-badge:
+	@echo "Generating coverage badge..."
+	-coverage run --source='.' manage.py test api.tests
+	@coverage report --format=total > .coverage_percentage
+	@echo "Coverage percentage saved to .coverage_percentage"
+	@echo "Use this in your README:"
+	@echo "![Test Coverage](https://img.shields.io/badge/test%20coverage-$$(cat .coverage_percentage)%%25-brightgreen)"
 
 # Docker Commands
 docker-build:

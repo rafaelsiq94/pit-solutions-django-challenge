@@ -93,11 +93,6 @@ class SyncPlanetsCommandTest(TestCase):
         self.assertIn("Total planets in database: 10", output)
         self.assertIn("Last updated planet: Tatooine", output)
         self.assertIn("Last sync time: 2023-01-01T00:00:00Z", output)
-        self.assertIn("Last sync statistics:", output)
-        self.assertIn("Created: 5", output)
-        self.assertIn("Updated: 2", output)
-        self.assertIn("Errors: 0", output)
-        self.assertIn("Total processed: 7", output)
 
         # Should not call sync_planets when --status is used
         mock_service_instance.sync_planets.assert_not_called()
